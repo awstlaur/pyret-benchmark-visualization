@@ -6,6 +6,8 @@ import xml.etree.ElementTree as ET
 import urllib2
 from os import listdir
 
+builds_dir = '/home/awstlaur/pyret-benchmark-visualization/builds/'
+
 xml_prefix = '{http://www.w3.org/2005/Atom}';
 link = xml_prefix + 'link';
 entry = xml_prefix + 'entry';
@@ -30,13 +32,13 @@ for child in root:
         content = child.find(link).attrib['href']
         urls.append({'url': content + url_suffix, 'filename': filename_prefix + content[pre_num_len:-1] + filename_suffix})
 
-current_files = listdir('.')
+current_files = listdir(builds_dir);
 
 for u in urls:
     if not(u['filename'] in current_files):
         print 'getting ' + u['filename']
         response = urllib2.urlopen(u['url'])
-        f = open(u['filename'], 'w')
+        f = open(builds_dir + u['filename'], 'w')
         f.write(response.read())
         f.close()
         

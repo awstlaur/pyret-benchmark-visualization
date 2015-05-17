@@ -1,7 +1,23 @@
 /*global d3*/ //jslint directive
 
+document.write('<h3>',
+  filename.substring(0, filename.length - 4).replace(/\-/g, ' '),
+  '</h3>');
+document.write('See Jenkins summary (if it still exists) ',
+  '<a href="',
+  'http://mainmast.cs.brown.edu/job/pyret-benchmark/', 
+  filename.substring('auto-report-'.length, filename.length - 4), 
+  '">here</a>.');
+document.write('<br />');
+document.write('Download ',
+  '<a href="',
+  '../builds/', filename,
+  '">csv file</a>.');
+document.write('<br />');
+document.write('<br />');
+document.write('<div class="chart-container"></div>');
 
-d3.csv('auto-report.build10.csv', function (error, data) {
+d3.csv('../builds/' + filename, function (error, data) {
 
   var width_correction = 400;
 
