@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+
+# reads the jenkins rss feed for pyret-benchmark and acquires any missing .csv files
+
+import xml.etree.ElementTree as ET
+import urllib2
+from os import listdir
+
+xml_prefix = '{http://www.w3.org/2005/Atom}';
+link = xml_prefix + 'link';
+entry = xml_prefix + 'entry';
+
+url_suffix = 'artifact/tools/benchmark/auto-report.csv';
+
+filename_prefix = 'auto-report-';
+filename_suffix = '.csv';
+
+urls = []
+
+response = urllib2.urlopen('http://mainmast.cs.brown.edu/job/pyret-benchmark/rssAll')
+#print response
+xml = response.read()
+
+pre_num_len = len('http://mainmast.cs.brown.edu:80/job/pyret-benchmark/')
+
+root = ET.fromstring(xml)
+
+for child in root:
+    if child.tag == entry:
+        content = child.find(link).attrib['href']
+        urls.append({'url': content + url_suffix, 'filename': filename_prefix + content[pre_num_len:-1] + filename_suffix})
+
+current_files = listdir('.')
+
+for u in urls:
+    if not(u['filename'] in current_files):
+        print 'getting ' + u['filename']
+        response = urllib2.urlopen(u['url'])
+        f = open(u['filename'], 'w')
+        f.write(response.read())
+        f.close()
+        
