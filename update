@@ -1,4 +1,6 @@
 #!/bin/bash
 /home/awstlaur/pyret-benchmark-visualization/update_builds && 
-/home/awstlaur/pyret-benchmark-visualization/update_site &&
-/usr/bin/rsync -i -r --exclude='.git*' --exclude='update*' --exclude='README*' --perms --chmod=Du+r,Du+w,Du+x,Dgo+r,Dgo+x,Fu+r,Fu+w,Fgo+r /home/awstlaur/pyret-benchmark-visualization/ /home/awstlaur/website/pyret-benchmark-visualization | grep '+'
+/home/awstlaur/pyret-benchmark-visualization/update_report &&
+/home/awstlaur/pyret-benchmark-visualization/update_indexhtml
+/home/awstlaur/pyret-benchmark-visualization/update_site
+
