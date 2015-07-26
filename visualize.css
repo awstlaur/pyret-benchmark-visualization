@@ -1,0 +1,15 @@
+body {
+	margin: 7px 7px 7px 7px;
+}
+
+#jenkins-nav {
+	float: right;
+}
+
+#csv-download {
+	float: right;
+}
+
+.pipe-right {
+	float: right;
+}
