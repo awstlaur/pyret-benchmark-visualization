@@ -3,6 +3,8 @@
     <!-- load jQuery + plugins first -->
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
     <script type="text/javascript" src="js/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
+    <script type="text/javascript" src="js/jquery.rss.js"></script>
 
     <!-- bootstrap, because I like over-doing things -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
@@ -21,6 +23,7 @@
     
     <span id="nav-links" style="display: none;">
       <ul class="nav nav-pills">
+        <li><a id="home-nav" href="/">Home</a></li>
         <li><a id="back-nav" href="#">Back</a></li>
         <li><a id="forward-nav" href="#">Forward</a></li>
         <li><a id="toggle-nav" href="#">Toggle</a></li>
@@ -31,11 +34,16 @@
     <div id="container" style="overflow: hidden;"></div>
     <form id="choose-build" style="display: none;">
       Build Number: (310 or higher)
-      <input type="text" name="build" min="1">
+      <input type="text" name="build" min="310" autofocus>
       Normalized?
       <input type="checkbox" name="normalized">
     </form>
-
+    <div id="rss-container" style="display:none;">
+      <h3>Here's the latest from Jenkins</h3>
+      <h6>Note: this site updates at midnight. It may not have the latest builds.</h6>
+      <div id="rss-feeds"></div>  
+    </div>
+    
     <script>
       // http://stackoverflow.com/a/2880929
       (window.onpopstate = function () {
@@ -54,12 +62,15 @@
 
       if (urlParams.build) {
         var build = parseInt(urlParams.build);
-        var normalized = urlParams.normalized === 'on';
+
+        var normalized = urlParams.normalized 
+          ? urlParams.normalized.slice(0,2) === 'on'
+          : false;
 
         var promise = visualize(build, normalized);
 
         promise.fail(function () {
-          $('#choose-build').toggle(true);
+          showIndexPage();
           alertError(build);
         });
 
@@ -88,27 +99,8 @@
 
         
       } else {
-        $('#choose-build').toggle(true);
+        showIndexPage();
       }
-
-      
-
-
-      // .click(function (e) {
-      //   build = build - 1;
-      //   visualize(build, normalized).fail(function () {
-      //     alertError(build);
-      //     build = build + 1;
-      //   });
-      // });
-
-      // .click(function (e) {
-      //   build = build + 1;
-      //   visualize(build, normalized).fail(function () {
-      //     alertError(build);
-      //     build = build - 1;
-      //   });
-      // });
     </script>
   </body>
 </html>

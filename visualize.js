@@ -1,5 +1,5 @@
 function alertError (build) {
-  alert('Error loading build ' + build + '. It may not exist.')
+  alert('Error loading build ' + build + '. It may not exist, or it hasn\'t synced over.')
 }
 
 function visualize (build, normalized) {
@@ -12,11 +12,19 @@ function visualize (build, normalized) {
 
   return $.ajax({
     type: 'GET',
-    url: 'builds/' + filename,
+    url: csvHref,
     dataType: 'text',
     success: function (data) {
       makeChart(Papa.parse(data), build, normalized);
     }
+  });
+}
+
+function showIndexPage () {
+  $('#choose-build').toggle(true);
+  $('#rss-container').toggle(true);
+  $('#rss-feeds').rss('http://mainmast.cs.brown.edu/job/pyret-benchmark/rssAll/index.xml', {
+    limit: 150
   });
 }
 
