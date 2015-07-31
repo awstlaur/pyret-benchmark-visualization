@@ -23,10 +23,11 @@
     
     <span id="nav-links" style="display: none;">
       <ul class="nav nav-pills">
-        <li><a id="home-nav" href="/~awstlaur/pyret-benchmark-visualization">Home</a></li>
+        <li><a id="home-nav" href=".">Home</a></li>
         <li><a id="back-nav" href="#">Back</a></li>
         <li><a id="forward-nav" href="#">Forward</a></li>
         <li><a id="toggle-nav" href="#">Toggle</a></li>
+        <li><a id="sort-nav" href="#">Sort</a></li>
         <li><a id="jenkins-nav" target="_blank" href="#">Jenkins Summary</a></li>
         <li><a id="csv-download" href="#">CSV File</a></li>
       </ul>          
@@ -37,6 +38,9 @@
       <input type="text" name="build" min="310" autofocus>
       Normalized?
       <input type="checkbox" name="normalized">
+      Sort by file size?
+      <input type="checkbox" name="sort">
+      <input type="submit">
     </form>
     <div id="rss-container" style="display:none;">
       <h3>Here's the latest from Jenkins</h3>
@@ -67,7 +71,13 @@
           ? urlParams.normalized.slice(0,2) === 'on'
           : false;
 
-        var promise = visualize(build, normalized);
+        var sort = urlParams.sort 
+          ? urlParams.sort.slice(0,2) === 'on'
+          : false;
+
+          console.log(sort);
+
+        var promise = visualize(build, normalized, sort);
 
         promise.fail(function () {
           showIndexPage();
@@ -81,20 +91,32 @@
           $('#nav-links').toggle(true);
 
           $('#back-nav').attr('href', '?build=' + previous 
-          + '&normalized=' + (normalized ? 'on' : 'off'));
+          + '&normalized=' + (normalized ? 'on' : 'off')
+          + '&sort=' + (sort ? 'on' : 'off'));
 
           $('#back-nav').html(previous);
 
           $('#forward-nav').attr('href', '?build=' + next
-          + '&normalized=' + (normalized ? 'on' : 'off'));
+          + '&normalized=' + (normalized ? 'on' : 'off')
+          + '&sort=' + (sort ? 'on' : 'off'));
 
           $('#forward-nav').html(next);
 
           $('#toggle-nav').attr('href', '?build=' + build
-          + '&normalized=' + (normalized ? 'off' : 'on'));
+          + '&normalized=' + (normalized ? 'off' : 'on')
+          + '&sort=' + (sort ? 'on' : 'off'));
 
           $('#toggle-nav').html(normalized ? 
-            'Toggle (Raw Hertz)' : 'Toggle (Normalized)');  
+            'Toggle (Raw Hertz)' : 'Toggle (Normalized)');
+
+          $('#sort-nav').attr('href', '?build=' + build
+          + '&normalized=' + (normalized ? 'on' : 'off')
+          + '&sort=' + (sort ? 'off' : 'on'));
+
+          $('#sort-nav').html(sort ? 
+            'Sort (Alpha)' : 'Sort (File Size)');  
+
+
         })
 
         
