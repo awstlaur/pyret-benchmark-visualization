@@ -65,7 +65,8 @@
       })();
 
       if (urlParams.build) {
-        var build = parseInt(urlParams.build);
+        //var build = parseInt(urlParams.build);
+        var build = urlParams.build;
 
         var normalized = urlParams.normalized 
           ? urlParams.normalized.slice(0,2) === 'on'
