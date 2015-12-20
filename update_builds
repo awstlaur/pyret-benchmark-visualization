@@ -12,33 +12,41 @@ xml_prefix = '{http://www.w3.org/2005/Atom}';
 link = xml_prefix + 'link';
 entry = xml_prefix + 'entry';
 
+pre_num_len = len('http://mainmast.cs.brown.edu:80/job/pyret-benchmark/')
+
 url_suffix = 'artifact/tools/benchmark/auto-report.csv';
 
 filename_prefix = 'auto-report-';
 filename_suffix = '.csv';
 
-urls = []
 
-response = urllib2.urlopen('http://mainmast.cs.brown.edu/job/pyret-benchmark/rssAll')
-#print response
-xml = response.read()
+def get_urls(response):
+    xml = response.read()
+    root = ET.fromstring(xml)
+    urls = []
+    for child in root:
+        if child.tag == entry:
+            content = child.find(link).attrib['href']
+            urls.append({'url': content + url_suffix, 'filename': filename_prefix + content[pre_num_len:-1] + filename_suffix})
+    return urls
 
-pre_num_len = len('http://mainmast.cs.brown.edu:80/job/pyret-benchmark/')
+response_all = urllib2.urlopen('http://mainmast.cs.brown.edu/job/pyret-benchmark/rssAll')
+response_failures = urllib2.urlopen('http://mainmast.cs.brown.edu/job/pyret-benchmark/rssFailed')
 
-root = ET.fromstring(xml)
+urls = get_urls(response_all)
+urls_failures = get_urls(response_failures)
 
-for child in root:
-    if child.tag == entry:
-        content = child.find(link).attrib['href']
-        urls.append({'url': content + url_suffix, 'filename': filename_prefix + content[pre_num_len:-1] + filename_suffix})
+failed_builds = map(lambda x: x['filename'], urls_failures)
 
 current_files = listdir(builds_dir);
 
 for u in urls:
-    if not(u['filename'] in current_files):
+    if not(u['filename'] in current_files) and not(u['filename'] in failed_builds):
         print 'getting ' + u['filename']
         response = urllib2.urlopen(u['url'])
         f = open(builds_dir + u['filename'], 'w')
         f.write(response.read())
         f.close()
-        
+
+
+
