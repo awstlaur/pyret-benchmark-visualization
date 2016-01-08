@@ -1,3 +1,25 @@
+// indexes into csv arrays
+var NAME = 0;
+var SUCCESS = 1;
+var FUNCTION = 2;
+var HZ = 3;
+var RME = 4;
+var SAMPLES = 5;
+
+var CATEGORY_HEIGHT = 120;
+
+var symLinks = {
+  'ast.arr': '../../../src/arr/trove/ast.arr',
+  'anf-loop-compiler.arr': '../../../src/arr/compiler/anf-loop-compiler.arr'
+}
+
+var githubFilePrefix = 'https://github.com/brownplt/pyret-lang/tree/master'
+  + '/tools/benchmark/auto-report-programs/';
+
+var rawGithubFilePrefix = 'https://raw.githubusercontent.com/brownplt/'
+  + 'pyret-lang/master/tools/benchmark/auto-report-programs/';
+
+
 function alertError (build) {
   alert('Error loading build ' + build + '. It may not exist, or it hasn\'t synced over.')
 }
@@ -27,27 +49,6 @@ function showIndexPage () {
     limit: 150
   });
 }
-
-// indexes into csv arrays
-var NAME = 0;
-var SUCCESS = 1;
-var FUNCTION = 2;
-var HZ = 3;
-var RME = 4;
-var SAMPLES = 5;
-
-var CATEGORY_HEIGHT = 120;
-
-var symLinks = {
-  'ast.arr': '../../../src/arr/trove/ast.arr',
-  'anf-loop-compiler.arr': '../../../src/arr/compiler/anf-loop-compiler.arr'
-}
-
-var githubFilePrefix = 'https://github.com/brownplt/pyret-lang/tree/master'
-  + '/tools/benchmark/auto-report-programs/';
-
-var rawGithubFilePrefix = 'https://raw.githubusercontent.com/brownplt/'
-  + 'pyret-lang/master/tools/benchmark/auto-report-programs/';
 
 // returns promise that resolves with
 // a hash mapping program names to file sizes
