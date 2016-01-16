@@ -314,10 +314,10 @@ function makeChart (csvParsed, build, normalized, sortByFileSize, fromSource, fi
           reversed: true
         },
         exporting: {
-         enabled: false
+         enabled: true
        },
        credits: {
-        enabled: false
+        enabled: true
         },
         series: [{
           name: 'Parse',
@@ -477,10 +477,10 @@ function makeDiffChart (csv0, csv1, filename0, filename1) {
             reversed: true
           },
           exporting: {
-           enabled: false
+           enabled: true
          },
          credits: {
-          enabled: false
+          enabled: true
           },
           series: [
             {
