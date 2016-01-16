@@ -89,11 +89,15 @@ function visualize (build, normalized, sortByFileSize) {
       }
     });  
   }
-  
+}
+
+function visualizeFromSource (src, filename) {
+  makeChart(Papa.parse(src), 0, false, false, true, filename);
 }
 
 function showIndexPage () {
   $('#choose-build').toggle(true);
+  $('#choose-file').toggle(true);
   $('#rss-container').toggle(true);
   $('#rss-feeds').rss('http://mainmast.cs.brown.edu/job/pyret-benchmark/rssAll/index.xml', {
     limit: 150
@@ -183,7 +187,8 @@ function formatPercent (numer, denom) {
   return Math.round((numer / denom) * 10000) / 100;
 }
 
-function makeChart (csvParsed, build, normalized, sortByFileSize) {
+function makeChart (csvParsed, build, normalized, sortByFileSize, fromSource, filename) {
+  console.log(fromSource, filename)
   data = csvParsed.data;
 
   data = data.filter(function (datum) {
@@ -259,7 +264,9 @@ function makeChart (csvParsed, build, normalized, sortByFileSize) {
           text: 'Pyret Benchmark'
         },
         subtitle: {
-          text: 'Build ' + build + (normalized ? ': Normalized' : ': Raw Hertz')
+          text: fromSource ? 
+              'Local file: ' + filename
+            : 'Build ' + build + (normalized ? ': Normalized' : ': Raw Hertz')
         },
         xAxis: {
           categories: names_set,
