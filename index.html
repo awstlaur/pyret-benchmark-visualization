@@ -55,7 +55,6 @@
       <h3>Option 2: Use Local File</h3>
       (Everything happens client-side.)
         <input type="file" name = "filename"/>
-        <button type="submit" class="btn btn-default">Submit</button>
     </form>
 
     <div id="rss-container" style="display:none;">
@@ -140,6 +139,7 @@
 
         
       } else {
+// htmlgoodies.com/beyond/javascript/read-text-files-using-the-javascript-filereader.html
         function readSingleFile(evt) {
             //Retrieve the first (and only!) File from the FileList object
             var f = evt.target.files[0]; 
@@ -161,7 +161,7 @@
           }
 
           document.getElementById('choose-file').addEventListener('change', readSingleFile, false);
-          
+
         showIndexPage();
       }
     </script>
