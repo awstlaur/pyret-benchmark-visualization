@@ -8,38 +8,88 @@ var SAMPLES = 5;
 
 var CATEGORY_HEIGHT = 120;
 
+var RANGE_REGEX = /(\d+):(\d+)/;
+
 var symLinks = {
   'ast.arr': '../../../src/arr/trove/ast.arr',
   'anf-loop-compiler.arr': '../../../src/arr/compiler/anf-loop-compiler.arr'
 }
 
 var githubFilePrefix = 'https://github.com/brownplt/pyret-lang/tree/master'
-  + '/tools/benchmark/auto-report-programs/';
++ '/tools/benchmark/auto-report-programs/';
 
 var rawGithubFilePrefix = 'https://raw.githubusercontent.com/brownplt/'
-  + 'pyret-lang/master/tools/benchmark/auto-report-programs/';
++ 'pyret-lang/master/tools/benchmark/auto-report-programs/';
 
 
 function alertError (build) {
-  alert('Error loading build ' + build + '. It may not exist, or it hasn\'t synced over.')
+  alert('Error loading build ' + build
+    + '. It may not exist, or it hasn\'t synced over. Check the Jenkins server for build errors!');
 }
 
 function visualize (build, normalized, sortByFileSize) {
-  var filename = 'auto-report-' + build + '.csv';
-  var jenkinsHref = 'http://mainmast.cs.brown.edu/job/pyret-benchmark/' + build;
-  var csvHref = 'builds/' + filename;
+  var matchRange = build.match(RANGE_REGEX);
 
-  $('#jenkins-nav').attr('href', jenkinsHref);
-  $('#csv-download').attr('href', csvHref);
+  var getErrorPlaceHolder = $.Deferred();
 
-  return $.ajax({
-    type: 'GET',
-    url: csvHref,
-    dataType: 'text',
-    success: function (data) {
-      makeChart(Papa.parse(data), build, normalized, sortByFileSize);
+  if(matchRange) {
+    var start = parseInt(matchRange[1]);
+    var end   = parseInt(matchRange[2]);
+    var range = [];
+    var i = 0, count = start;
+    while (count <= end) {
+      range[i] = count;
+      i++;
+      count++;
     }
-  });
+
+    $('#jenkins-nav').attr('href',
+      'http://mainmast.cs.brown.edu/job/pyret-benchmark/' + end);
+    $('#csv-download').attr('href', 
+      'builds/auto-report-' + end + '.csv');
+    
+    var promises = range.map(function (build) {
+      try {
+        return $.ajax({
+          type: 'GET',
+          url: 'builds/auto-report-' + build + '.csv',
+          dataType: 'text',
+        });   
+      } catch (e) {
+        return getErrorPlaceHolder;
+      }
+    });
+
+    console.log(promises);
+
+    // http://stackoverflow.com/a/4878978
+    return $.when.apply($, promises).then(function() {
+      var args = Array.prototype.slice.call(arguments);
+      var data = args.map(function (arg) {
+        return Papa.parse(arg[0]).data;
+      });
+      
+      makeRangeChart(data, start, end, normalized, sortByFileSize);
+
+    });
+  } else {
+    var filename = 'auto-report-' + build + '.csv';
+    var jenkinsHref = 'http://mainmast.cs.brown.edu/job/pyret-benchmark/' + build;
+    var csvHref = 'builds/' + filename;
+
+    $('#jenkins-nav').attr('href', jenkinsHref);
+    $('#csv-download').attr('href', csvHref);
+
+    return $.ajax({
+      type: 'GET',
+      url: csvHref,
+      dataType: 'text',
+      success: function (data) {
+        makeChart(Papa.parse(data), build, normalized, sortByFileSize);
+      }
+    });  
+  }
+  
 }
 
 function showIndexPage () {
@@ -133,8 +183,8 @@ function formatPercent (numer, denom) {
   return Math.round((numer / denom) * 10000) / 100;
 }
 
-function makeChart (parseResult, build, normalized, sortByFileSize) {
-  data = parseResult.data;
+function makeChart (csvParsed, build, normalized, sortByFileSize) {
+  data = csvParsed.data;
 
   data = data.filter(function (datum) {
     return datum[SUCCESS] === 'true'; 
@@ -262,25 +312,96 @@ function makeChart (parseResult, build, normalized, sortByFileSize) {
           reversed: true
         },
         exporting: {
-           enabled: false
-        },
-        credits: {
-          enabled: false
-        },
-        series: [{
-          name: 'Parse',
-          data: parseData,
-          index: 2
-        }, {
-          name: 'Load',
-          data: loadData,
-          index: 1
-        }, {
-          name: 'Eval',
-          data: evalData,
-          index: 0
-        }]
-      });
+         enabled: false
+       },
+       credits: {
+        enabled: false
+      },
+      series: [{
+        name: 'Parse',
+        data: parseData,
+        index: 2
+      }, {
+        name: 'Load',
+        data: loadData,
+        index: 1
+      }, {
+        name: 'Eval',
+        data: evalData,
+        index: 0
+      }]
     });
+});
+}
+}
+
+function getRangeSliceByName (rangeParsed, index, name) {
+  return rangeParsed.map(function (buildData) {
+    return buildData.filter(function (datum) {
+      return datum[index] === name; }) })
+}
+
+function getFileViewOfSlice (slice, fileIndex) {
+  return slice.map(function (sliceData) {return sliceData[fileIndex];})
+}
+
+function makeRangeChart (rangeParsed, start, end, normalized, sortByFileSize) {
+  var FILE_INDEX = 14;
+  // console.log(rangeParsed);
+  var parseSlice = getRangeSliceByName(rangeParsed, FUNCTION, 'eval');
+  // console.log(parseSlice);
+  var testFileParseSlice = getFileViewOfSlice(parseSlice, FILE_INDEX);
+  console.log(testFileParseSlice);
+
+  var hzSlice = testFileParseSlice.map(function (datum) {
+    return formatHzValue(get_hz(datum));
+  });
+
+  var range = [];
+  var i = 0, count = start;
+  while (count <= end) {
+    range[i] = count;
+    i++;
+    count++;
   }
+  
+  $(function () {
+    $('#container').highcharts({
+      chart: {
+        zoomType: 'x'
+      },
+      title: {
+        text: 'Eval Speed of ' + testFileParseSlice[0][0]
+      },
+      xAxis: {
+        title: {
+          text: 'Jenkins Build Number'
+        },
+        categories: range
+      },
+      yAxis: {
+        title: {
+          text: 'Speed (HZ)'
+        }
+              // plotLines: [{
+              //     value: 0,
+              //     width: 1,
+              //     color: '#808080'
+              // }]
+            },
+          // tooltip: {
+          //     valueSuffix: '°C'
+          // },
+          // legend: {
+          //     layout: 'vertical',
+          //     align: 'right',
+          //     verticalAlign: 'middle',
+          //     borderWidth: 0
+          // },
+          series: [{
+            name: 'Parse',
+            data: hzSlice
+          }]
+        });
+  });
 }
