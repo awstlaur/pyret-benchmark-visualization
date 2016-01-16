@@ -5,8 +5,9 @@
 import xml.etree.ElementTree as ET
 import urllib2
 from os import listdir
+from os import chmod
 
-builds_dir = '/home/awstlaur/pyret-benchmark-visualization/builds/'
+builds_dir = '/web/cs/web/people/awstlaur/pyret-benchmark-visualization/builds/'
 
 xml_prefix = '{http://www.w3.org/2005/Atom}';
 link = xml_prefix + 'link';
@@ -44,7 +45,9 @@ for u in urls:
     if not(u['filename'] in current_files) and not(u['filename'] in failed_builds):
         print 'getting ' + u['filename']
         response = urllib2.urlopen(u['url'])
-        f = open(builds_dir + u['filename'], 'w')
+        name = builds_dir + u['filename']
+        f = open(name, 'w')
+        chmod(name, 0o644)
         f.write(response.read())
         f.close()
 
