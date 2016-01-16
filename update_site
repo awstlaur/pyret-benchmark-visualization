@@ -1,2 +1,0 @@
-#!/bin/bash
-/usr/bin/rsync -i -r --delete --exclude='.git*' --exclude='update*' --exclude='README*' --delete-excluded --perms --chmod=Du+r,Du+w,Du+x,Dgo+r,Dgo+x,Fu+r,Fu+w,Fgo+r /home/awstlaur/pyret-benchmark-visualization/ /home/awstlaur/website/pyret-benchmark-visualization | /bin/grep '+\|delet'

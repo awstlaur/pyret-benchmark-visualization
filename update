@@ -1,3 +1,2 @@
 #!/bin/bash
-/home/awstlaur/pyret-benchmark-visualization/update_builds &&
-/home/awstlaur/pyret-benchmark-visualization/update_site
+(cd /home/awstlaur/pyret-benchmark-visualization && make get-builds && make push-site)
