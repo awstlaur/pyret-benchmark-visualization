@@ -33,45 +33,36 @@ function visualize (build, normalized, sortByFileSize) {
   var getErrorPlaceHolder = $.Deferred();
 
   if(matchRange) {
-    var start = parseInt(matchRange[1]);
-    var end   = parseInt(matchRange[2]);
-    var range = [];
-    var i = 0, count = start;
-    while (count <= end) {
-      range[i] = count;
-      i++;
-      count++;
-    }
+    var build0 = parseInt(matchRange[1]);
+    var build1 = parseInt(matchRange[2]);
 
-    $('#jenkins-nav').attr('href',
-      'http://mainmast.cs.brown.edu/job/pyret-benchmark/' + end);
-    $('#csv-download').attr('href', 
-      'builds/auto-report-' + end + '.csv');
-    
-    var promises = range.map(function (build) {
-      try {
+
+    var filename0 = 'auto-report-' + build0 + '.csv';
+    var filename1 = 'auto-report-' + build1 + '.csv';
+    var jenkinsHref = 'http://mainmast.cs.brown.edu/job/pyret-benchmark/' + build0;
+    var csvHref = 'builds/' + filename0;
+
+    $('#jenkins-nav').attr('href', jenkinsHref);
+    $('#csv-download').attr('href', csvHref);
+
+    var csvHref0 = csvHref;
+    var csvHref1 = 'builds/' + filename1;
+
+    return $.ajax({
+      type: 'GET',
+      url: csvHref0,
+      dataType: 'text',
+      success: function (data0) {
         return $.ajax({
           type: 'GET',
-          url: 'builds/auto-report-' + build + '.csv',
+          url: csvHref1,
           dataType: 'text',
-        });   
-      } catch (e) {
-        return getErrorPlaceHolder;
+          success: function (data1) {
+            makeDiffChart(Papa.parse(data0), Papa.parse(data1), filename0, filename1);
+          }
+        });
       }
-    });
-
-    // console.log(promises);
-
-    // http://stackoverflow.com/a/4878978
-    return $.when.apply($, promises).then(function() {
-      var args = Array.prototype.slice.call(arguments);
-      var data = args.map(function (arg) {
-        return Papa.parse(arg[0]).data;
-      });
-      
-      makeRangeChart(data, start, end, normalized, sortByFileSize);
-
-    });
+    }); 
   } else {
     var filename = 'auto-report-' + build + '.csv';
     var jenkinsHref = 'http://mainmast.cs.brown.edu/job/pyret-benchmark/' + build;
@@ -373,8 +364,8 @@ function makeDiffChart (csv0, csv1, filename0, filename1) {
   var rangeParsed = [data0, data1];
 
   var sliceParse = getRangeSliceByName(rangeParsed, FUNCTION, 'parse');
-  var sliceLoad = getRangeSliceByName(rangeParsed, FUNCTION, 'parse');
-  var sliceEval = getRangeSliceByName(rangeParsed, FUNCTION, 'parse');
+  var sliceLoad = getRangeSliceByName(rangeParsed, FUNCTION, 'load');
+  var sliceEval = getRangeSliceByName(rangeParsed, FUNCTION, 'eval');
 
 
   var names = data0.map(function (datum) {
@@ -433,7 +424,7 @@ function makeDiffChart (csv0, csv1, filename0, filename1) {
             text: 'Pyret Benchmark'
           },
           subtitle: {
-            text: 'Local files: ' + filename0 + ' & ' + filename1
+            text: 'Files: ' + filename0 + ' & ' + filename1
           },
           xAxis: {
             categories: names_set,

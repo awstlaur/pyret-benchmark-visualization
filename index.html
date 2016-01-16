@@ -39,7 +39,7 @@
       <h3>Option 1: Select Jenkins Build Number</h3>
       <div class="form-group">
         <label for="build-number">Build number:</label><br />
-        (310 or higher)<br />
+        (310 or higher; compare two builds by entering 'a:b', e.g. '2049:2051')<br />
         <input type="text" name="build" min="310" autofocus id="build-number">
       </div>
       <div class="checkbox">
@@ -114,34 +114,43 @@
         promise.done(function () {
           var previous = (build - 1);
           var next = (build + 1);
+          var RANGE_REGEX = /(\d+):(\d+)/;
 
-          $('#nav-links').toggle(true);
+          if (!build.match(RANGE_REGEX)) {
+            $('#nav-links').toggle(true);
 
-          $('#back-nav').attr('href', '?build=' + previous 
-          + '&normalized=' + (normalized ? 'on' : 'off')
-          + '&sort=' + (sort ? 'on' : 'off'));
+            $('#back-nav').attr('href', '?build=' + previous 
+            + '&normalized=' + (normalized ? 'on' : 'off')
+            + '&sort=' + (sort ? 'on' : 'off'));
 
-          $('#back-nav').html(previous);
+            $('#back-nav').html(previous);
 
-          $('#forward-nav').attr('href', '?build=' + next
-          + '&normalized=' + (normalized ? 'on' : 'off')
-          + '&sort=' + (sort ? 'on' : 'off'));
+            $('#forward-nav').attr('href', '?build=' + next
+            + '&normalized=' + (normalized ? 'on' : 'off')
+            + '&sort=' + (sort ? 'on' : 'off'));
 
-          $('#forward-nav').html(next);
+            $('#forward-nav').html(next);
 
-          $('#toggle-nav').attr('href', '?build=' + build
-          + '&normalized=' + (normalized ? 'off' : 'on')
-          + '&sort=' + (sort ? 'on' : 'off'));
+            $('#toggle-nav').attr('href', '?build=' + build
+            + '&normalized=' + (normalized ? 'off' : 'on')
+            + '&sort=' + (sort ? 'on' : 'off'));
 
-          $('#toggle-nav').html(normalized ? 
-            'Toggle (Raw Hertz)' : 'Toggle (Normalized)');
+            $('#toggle-nav').html(normalized ? 
+              'Toggle (Raw Hertz)' : 'Toggle (Normalized)');
 
-          $('#sort-nav').attr('href', '?build=' + build
-          + '&normalized=' + (normalized ? 'on' : 'off')
-          + '&sort=' + (sort ? 'off' : 'on'));
+            $('#sort-nav').attr('href', '?build=' + build
+            + '&normalized=' + (normalized ? 'on' : 'off')
+            + '&sort=' + (sort ? 'off' : 'on'));
 
-          $('#sort-nav').html(sort ? 
-            'Sort (Alpha)' : 'Sort (File Size)');  
+            $('#sort-nav').html(sort ? 
+              'Sort (Alpha)' : 'Sort (File Size)');  
+          } else {
+            $('#nav-links').toggle(true);
+            $('#back-nav').toggle(false);
+            $('#forward-nav').toggle(false);
+            $('#toggle-nav').toggle(false);
+            $('#sort-nav').toggle(false);
+          }        
 
 
         })
