@@ -60,7 +60,7 @@ function visualize (build, normalized, sortByFileSize) {
       }
     });
 
-    console.log(promises);
+    // console.log(promises);
 
     // http://stackoverflow.com/a/4878978
     return $.when.apply($, promises).then(function() {
@@ -95,9 +95,14 @@ function visualizeFromSource (src, filename) {
   makeChart(Papa.parse(src), 0, false, false, true, filename);
 }
 
+function visualizeDiffFromSource (src0, src1, filename0, filename1) {
+  makeDiffChart(Papa.parse(src0), Papa.parse(src1), filename0, filename1);
+}
+
 function showIndexPage () {
   $('#choose-build').toggle(true);
   $('#choose-file').toggle(true);
+  $('#choose-two-files').toggle(true);
   $('#rss-container').toggle(true);
   $('#rss-feeds').rss('http://mainmast.cs.brown.edu/job/pyret-benchmark/rssAll/index.xml', {
     limit: 150
@@ -188,7 +193,6 @@ function formatPercent (numer, denom) {
 }
 
 function makeChart (csvParsed, build, normalized, sortByFileSize, fromSource, filename) {
-  console.log(fromSource, filename)
   data = csvParsed.data;
 
   data = data.filter(function (datum) {
@@ -265,8 +269,8 @@ function makeChart (csvParsed, build, normalized, sortByFileSize, fromSource, fi
         },
         subtitle: {
           text: fromSource ? 
-              'Local file: ' + filename
-            : 'Build ' + build + (normalized ? ': Normalized' : ': Raw Hertz')
+          'Local file: ' + filename
+          : 'Build ' + build + (normalized ? ': Normalized' : ': Raw Hertz')
         },
         xAxis: {
           categories: names_set,
@@ -323,27 +327,28 @@ function makeChart (csvParsed, build, normalized, sortByFileSize, fromSource, fi
        },
        credits: {
         enabled: false
-      },
-      series: [{
-        name: 'Parse',
-        data: parseData,
-        index: 2
-      }, {
-        name: 'Load',
-        data: loadData,
-        index: 1
-      }, {
-        name: 'Eval',
-        data: evalData,
-        index: 0
-      }]
+        },
+        series: [{
+          name: 'Parse',
+          data: parseData,
+          index: 2
+        }, {
+          name: 'Load',
+          data: loadData,
+          index: 1
+        }, {
+          name: 'Eval',
+          data: evalData,
+          index: 0
+        }]
+      });
     });
-});
-}
+  }
 }
 
 function getRangeSliceByName (rangeParsed, index, name) {
   return rangeParsed.map(function (buildData) {
+    // console.log(buildData)
     return buildData.filter(function (datum) {
       return datum[index] === name; }) })
 }
@@ -352,13 +357,184 @@ function getFileViewOfSlice (slice, fileIndex) {
   return slice.map(function (sliceData) {return sliceData[fileIndex];})
 }
 
+function makeDiffChart (csv0, csv1, filename0, filename1) {
+
+  var data0 = csv0.data;
+  var data1 = csv1.data;
+
+  data0 = data0.filter(function (datum) {
+    return datum[SUCCESS] === 'true'; 
+  });
+
+  data1 = data1.filter(function (datum) {
+    return datum[SUCCESS] === 'true'; 
+  });
+
+  var rangeParsed = [data0, data1];
+
+  var sliceParse = getRangeSliceByName(rangeParsed, FUNCTION, 'parse');
+  var sliceLoad = getRangeSliceByName(rangeParsed, FUNCTION, 'parse');
+  var sliceEval = getRangeSliceByName(rangeParsed, FUNCTION, 'parse');
+
+
+  var names = data0.map(function (datum) {
+    return datum[NAME];
+  });
+
+  // console.log(names);
+
+  if (names.length % 3 !== 0) {
+    throw new Error('Corrupted CSV data!');
+  }
+
+  /* names are in triplicate because of parse, load, and eval */
+  var i = 0;
+  var names_set = [];
+  while (i < names.length) {
+    names_set[i / 3] = names[i];
+    i = i + 3;
+  }
+
+  function getFormatHz (datum) {
+    return formatHzValue(get_hz(datum));
+  }
+
+  
+  var parse0 = sliceParse[0].map(getFormatHz);
+  var parse1 = sliceParse[1].map(getFormatHz);
+
+  var load0 = sliceLoad[0].map(getFormatHz);
+  var load1 = sliceLoad[1].map(getFormatHz);
+
+  var eval0 = sliceEval[0].map(getFormatHz);
+  var eval1 = sliceEval[1].map(getFormatHz);
+
+  function filenameFormat (fn) {
+    // remove .csv suffix
+    return fn.slice(0, fn.length - 4)
+  }
+
+  var fn0 = filenameFormat(filename0);
+  var fn1 = filenameFormat(filename1);
+
+
+
+  showChart();
+
+  function showChart () {
+      $(function () {
+        $('#container').highcharts({
+          chart: {
+            type: 'bar',
+            height: names_set.length * CATEGORY_HEIGHT * 2.5,
+            marginRight: 100
+          },
+          title: {
+            text: 'Pyret Benchmark'
+          },
+          subtitle: {
+            text: 'Local files: ' + filename0 + ' & ' + filename1
+          },
+          xAxis: {
+            categories: names_set,
+            title: {
+              text: 'x axis'
+            },
+            labels: {
+              formatter: function () {
+                var disp = this.value;
+                return '<a href="' + githubFilePrefix + this.value 
+                + '" target="_blank">' + disp + '</a>';
+              },
+              useHTML: true
+            }
+          },
+          yAxis: {
+            min: 0,
+            title: {
+              text: 'Hertz (ops/second)',
+              align: 'high'
+            },
+            labels: {
+              overflow: 'justify'
+            },
+            opposite: true
+          },
+          tooltip: {
+            valueSuffix: ' hz'
+          },
+          plotOptions: {
+            bar: {
+              dataLabels: {
+                enabled: true
+              }
+            },
+            series: {
+              pointWidth: 20    
+            }
+          },
+          legend: {
+            layout: 'vertical',
+            align: 'left',
+            verticalAlign: 'top',
+            x: 30,
+            y: 80,
+            floating: true,
+            borderWidth: 1,
+            backgroundColor: ((Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'),
+            shadow: true,
+            reversed: true
+          },
+          exporting: {
+           enabled: false
+         },
+         credits: {
+          enabled: false
+          },
+          series: [
+            {
+              name: 'Eval ' + fn1,
+              data: eval1,
+              // index: 0
+            },
+            {
+              name: 'Eval ' + fn0,
+              data: eval0,
+              // index: 1
+            },
+            {
+              name: 'Load ' + fn1,
+              data: load1,
+              // index: 0
+            },
+            {
+              name: 'Load ' + fn0,
+              data: load0,
+              // index: 1
+            },
+            {
+              name: 'Parse ' + fn1,
+              data: parse1,
+              // index: 0
+            },
+            {
+              name: 'Parse ' + fn0,
+              data: parse0,
+              // index: 1
+          }
+          ]
+        });
+      });
+  }
+}
+
 function makeRangeChart (rangeParsed, start, end, normalized, sortByFileSize) {
   var FILE_INDEX = 14;
   // console.log(rangeParsed);
   var parseSlice = getRangeSliceByName(rangeParsed, FUNCTION, 'eval');
   // console.log(parseSlice);
   var testFileParseSlice = getFileViewOfSlice(parseSlice, FILE_INDEX);
-  console.log(testFileParseSlice);
+  // console.log(testFileParseSlice);
 
   var hzSlice = testFileParseSlice.map(function (datum) {
     return formatHzValue(get_hz(datum));

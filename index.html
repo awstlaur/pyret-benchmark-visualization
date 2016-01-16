@@ -54,7 +54,16 @@
     <form role="form" id="choose-file" style="display: none;">
       <h3>Option 2: Use Local File</h3>
       (Everything happens client-side.)
-        <input type="file" name = "filename"/>
+        <input type="file"/>
+        <button id="choose-file-submit" class="btn btn-default">Do it!</button>
+    </form>
+
+    <form role="form" id="choose-two-files" style="display: none;">
+      <h3>Option 3: Compare Two Files</h3>
+      (Everything happens client-side.)
+        <input type="file" />
+        <input type="file" />
+        <button id="choose-two-files-submit" class="btn btn-default">Do it!</button>
     </form>
 
     <div id="rss-container" style="display:none;">
@@ -136,31 +145,57 @@
 
 
         })
-
-        
       } else {
-// htmlgoodies.com/beyond/javascript/read-text-files-using-the-javascript-filereader.html
+
         function readSingleFile(evt) {
-            //Retrieve the first (and only!) File from the FileList object
-            var f = evt.target.files[0]; 
+          evt.preventDefault();
+          console.log(evt)
+          var f = evt.target.parentNode.elements[0].files[0]; 
 
-            if (f) {
-              var r = new FileReader();
-              r.onload = function(e) { 
-                var contents = e.target.result;
-                if (f.type !== 'text/csv') {
-                  alert('Please choose a csv file!');
-                } else {
-                  visualizeFromSource(contents, f.name);
-                }
-              }
-              r.readAsText(f);
-            } else { 
-              alert("Failed to load file");
+          var valid = f !== undefined && f.type === 'text/csv'
+
+          if (valid) {
+            var r = new FileReader();
+            r.readAsText(f);
+            r.onload = function(e) { 
+              visualizeFromSource(e.target.result, f.name);
             }
+          } else {
+            alert('Please specify a csv file!')
           }
+        } 
 
-          document.getElementById('choose-file').addEventListener('change', readSingleFile, false);
+        function readTwoFiles(evt) {
+          evt.preventDefault();
+          var formElements = evt.target.parentNode.elements;
+          // console.log(formElements, formElements[0], formElements[1])
+          var file0 = formElements[0].files[0];
+          var file1 = formElements[1].files[0];
+          var filename0 = file0.name;
+          var filename1 = file1.name;
+        
+          var valid = file0 !== undefined && file1 !== undefined
+            && file0.type ==='text/csv' && file1.type === 'text/csv';
+
+          if (valid) {
+            var r0 = new FileReader();
+            var r1 = new FileReader();
+            r0.readAsText(file0);
+            r1.readAsText(file1);
+            r0.onload = function (e0) {
+              r1.onload = function (e1) {
+                var contents0 = e0.target.result;
+                var contents1 = e1.target.result;
+                visualizeDiffFromSource(contents0, contents1, filename0, filename1);
+              }
+            }
+          } else {
+            alert('Please specify two CSV files!');
+          }
+        }
+
+          document.getElementById('choose-file-submit').addEventListener('click', readSingleFile, false);
+          document.getElementById('choose-two-files-submit').addEventListener('click', readTwoFiles, false)
 
         showIndexPage();
       }
