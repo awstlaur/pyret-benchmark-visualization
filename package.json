@@ -1,0 +1,10 @@
+{
+	"dependencies": {
+		"jshint": "~2.9.1"
+	},
+	"repository": {
+	  "type": "git",
+	  "url": "git://github.com/awstlaur/pyret-benchmark-visualization"
+	},
+	"license": "MIT"
+}

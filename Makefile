@@ -17,3 +17,13 @@ get-builds:
 .PHONY: push-site
 push-site:
 	$(RSYNC) $(RFLAGS) $(SOURCE) $(SITE)
+
+
+NODE    = node
+MODULES = node_modules/
+JSHINT  = $(MODULES)jshint/bin/jshint
+FILES   = visualize.js
+
+.PHONY: jshint
+jshint:
+	$(NODE) $(JSHINT) $(FILES)
