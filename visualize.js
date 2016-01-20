@@ -244,12 +244,6 @@ function makeChart (csvParsed, build, normalized, sortByFileSize, fromSource, fi
     evalData = evalData.map(formatHzValue);
   }
 
-  if (sortByFileSize) {
-    getAllProgramSizes(names_set).done(function (response) {
-      sortData(response, names_set, parseData, loadData, evalData, 'size');
-    });
-  }
-
   var config = {
     series: [
       {
@@ -276,7 +270,14 @@ function makeChart (csvParsed, build, normalized, sortByFileSize, fromSource, fi
     yAxisText: normalized ? 'percent' : 'Hertz (ops/second)'
   };
 
-  showChart(config);
+  if (sortByFileSize) {
+    getAllProgramSizes(names_set).done(function (response) {
+      sortData(response, names_set, parseData, loadData, evalData, 'size');
+      showChart(config);
+    });
+  } else {
+    showChart(config);
+  }
 }
 
 function getRangeSliceByName (rangeParsed, index, name) {
@@ -391,67 +392,6 @@ function makeDiffChart (csv0, csv1, filename0, filename1) {
 
 
   showChart(config);
-}
-
-function makeRangeChart (rangeParsed, start, end, normalized, sortByFileSize) {
-  var FILE_INDEX = 14;
-  // console.log(rangeParsed);
-  var parseSlice = getRangeSliceByName(rangeParsed, FUNCTION, 'eval');
-  // console.log(parseSlice);
-  var testFileParseSlice = getFileViewOfSlice(parseSlice, FILE_INDEX);
-  // console.log(testFileParseSlice);
-
-  var hzSlice = testFileParseSlice.map(function (datum) {
-    return formatHzValue(get_hz(datum));
-  });
-
-  var range = [];
-  var i = 0, count = start;
-  while (count <= end) {
-    range[i] = count;
-    i++;
-    count++;
-  }
-  
-  $(function () {
-    $('#container').highcharts({
-      chart: {
-        zoomType: 'x'
-      },
-      title: {
-        text: 'Eval Speed of ' + testFileParseSlice[0][0]
-      },
-      xAxis: {
-        title: {
-          text: 'Jenkins Build Number'
-        },
-        categories: range
-      },
-      yAxis: {
-        title: {
-          text: 'Speed (HZ)'
-        }
-              // plotLines: [{
-              //     value: 0,
-              //     width: 1,
-              //     color: '#808080'
-              // }]
-            },
-          // tooltip: {
-          //     valueSuffix: '°C'
-          // },
-          // legend: {
-          //     layout: 'vertical',
-          //     align: 'right',
-          //     verticalAlign: 'middle',
-          //     borderWidth: 0
-          // },
-          series: [{
-            name: 'Parse',
-            data: hzSlice
-          }]
-        });
-  });
 }
 
 function showChart (config) {

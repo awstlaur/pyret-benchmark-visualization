@@ -98,10 +98,14 @@
       }).call();
 
       if (urlParams.build) {
-        var build = urlParams.build;
-        if (build.endsWith('/')) {
-          build = build.slice(0, build.length - 1);
+        var paramKeys = Object.keys(urlParams);
+        for (var i = 0; i < paramKeys.length; i++) {
+          var key = paramKeys[i];
+          if (urlParams[key].endsWith('/')) {
+            urlParams[key] = urlParams[key].slice(0, urlParams[key].length - 1);
+          }
         }
+        var build = urlParams.build;
 
         var normalized = urlParams.normalized ?
           urlParams.normalized.slice(0,2) === 'on' :
