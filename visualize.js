@@ -328,6 +328,11 @@ function getFileViewOfSlice (slice, fileIndex) {
   });
 }
 
+function superError (msg) {
+  alert(msg);
+  throw new Error(msg);
+}
+
 function makeDiffChart (csv0, csv1, filename0, filename1) {
 
   var data0 = csv0.data;
@@ -341,11 +346,33 @@ function makeDiffChart (csv0, csv1, filename0, filename1) {
     return datum[SUCCESS] === 'true'; 
   });
 
+  var seriesNames0 = getSeriesNames(data0);
+  var seriesNames1 = getSeriesNames(data1);
+  if (seriesNames0.length !== seriesNames1.length) {
+    superError("Data sets don't have the same number of series!");
+    
+  }
+  var i;
+  for (i = 0; i < seriesNames0.length; i++) {
+    if (seriesNames0[i] !== seriesNames1[i]) {
+      superError("Data sets have mismatching series!");
+    }
+  }
+
+  var seriesNames = seriesNames0;
+
   var rangeParsed = [data0, data1];
 
-  var sliceParse = getRangeSliceByName(rangeParsed, FUNCTION, 'parse');
-  var sliceLoad = getRangeSliceByName(rangeParsed, FUNCTION, 'load');
-  var sliceEval = getRangeSliceByName(rangeParsed, FUNCTION, 'eval');
+  var seriesSlices = {};
+  
+  for (i = 0; i < seriesNames.length; i++) {
+    seriesSlices[seriesNames[i]] = 
+      getRangeSliceByName(rangeParsed, FUNCTION, seriesNames[i]);
+  }
+
+  // var sliceParse = getRangeSliceByName(rangeParsed, FUNCTION, 'parse');
+  // var sliceLoad = getRangeSliceByName(rangeParsed, FUNCTION, 'load');
+  // var sliceEval = getRangeSliceByName(rangeParsed, FUNCTION, 'eval');
 
 
   var names = data0.map(function (datum) {
@@ -353,32 +380,39 @@ function makeDiffChart (csv0, csv1, filename0, filename1) {
   });
 
   // console.log(names);
+  var NUMBER_OF_SERIES = seriesNames.length;
 
-  if (names.length % 3 !== 0) {
+  if (names.length % NUMBER_OF_SERIES !== 0) {
     throw new Error('Corrupted CSV data!');
   }
 
-  /* names are in triplicate because of parse, load, and eval */
-  var i = 0;
+  i = 0;
   var names_set = [];
   while (i < names.length) {
-    names_set[i / 3] = names[i];
-    i = i + 3;
+    names_set[i / NUMBER_OF_SERIES] = names[i];
+    i = i + NUMBER_OF_SERIES;
   }
 
   function getFormatHz (datum) {
     return formatHzValue(get_hz(datum));
   }
 
+  for (i = 0; i < seriesNames.length; i++) {
+    seriesSlices[seriesNames[i]][0] = 
+      seriesSlices[seriesNames[i]][0].map(getFormatHz);
+    seriesSlices[seriesNames[i]][1] = 
+      seriesSlices[seriesNames[i]][1].map(getFormatHz);
+  }
+
   
-  var parse0 = sliceParse[0].map(getFormatHz);
-  var parse1 = sliceParse[1].map(getFormatHz);
+  // var parse0 = sliceParse[0].map(getFormatHz);
+  // var parse1 = sliceParse[1].map(getFormatHz);
 
-  var load0 = sliceLoad[0].map(getFormatHz);
-  var load1 = sliceLoad[1].map(getFormatHz);
+  // var load0 = sliceLoad[0].map(getFormatHz);
+  // var load1 = sliceLoad[1].map(getFormatHz);
 
-  var eval0 = sliceEval[0].map(getFormatHz);
-  var eval1 = sliceEval[1].map(getFormatHz);
+  // var eval0 = sliceEval[0].map(getFormatHz);
+  // var eval1 = sliceEval[1].map(getFormatHz);
 
   function filenameFormat (fn) {
     // remove .csv suffix
@@ -388,33 +422,22 @@ function makeDiffChart (csv0, csv1, filename0, filename1) {
   var fn0 = filenameFormat(filename0);
   var fn1 = filenameFormat(filename1);
 
+  var chartSeries = [];
+  for (i = 0; i < seriesNames.length; i++) {
+    chartSeries[2 * i] = {
+      name: [SERIES_PRETTY_NAME[seriesNames[i]], fn0].join(' '),
+      data: seriesSlices[seriesNames[i]][0]
+    };
+    chartSeries[(2 * i) + 1] = {
+      name: [SERIES_PRETTY_NAME[seriesNames[i]], fn1].join(' '),
+      data: seriesSlices[seriesNames[i]][1]
+    };
+  }
+
+  chartSeries.reverse();
+
   var config = {
-    series: [
-      {
-        name: 'Eval ' + fn1,
-        data: eval1,
-      },
-      {
-        name: 'Eval ' + fn0,
-        data: eval0,
-      },
-      {
-        name: 'Load ' + fn1,
-        data: load1,
-      },
-      {
-        name: 'Load ' + fn0,
-        data: load0,
-      },
-      {
-        name: 'Parse ' + fn1,
-        data: parse1,
-      },
-      {
-        name: 'Parse ' + fn0,
-        data: parse0,
-      }
-    ],
+    series: chartSeries,
     names: names_set,
     heightFactor: 1,
     files: [filename0, filename1],
