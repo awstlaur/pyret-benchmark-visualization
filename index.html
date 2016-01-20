@@ -123,11 +123,12 @@
         });
 
         promise.done(function () {
-          var previous = (build - 1);
-          var next = (build + 1);
-          var RANGE_REGEX = /(\d+):(\d+)/;
+          var buildNum    = parseInt(build);
+          var previous    = (buildNum - 1);
+          var next        = (buildNum + 1);
+          var TWO_BUILDS = /(\d+):(\d+)/;
 
-          if (!build.match(RANGE_REGEX)) {
+          if (!build.match(TWO_BUILDS)) {
             $('#nav-links').toggle(true);
 
             $('#back-nav').attr('href', '?build=' + previous +

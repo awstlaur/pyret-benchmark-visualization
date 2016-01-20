@@ -8,10 +8,23 @@ var HZ = 3;
 var RME = 4;
 var SAMPLES = 5;
 
-var CATEGORY_HEIGHT = 120;
+var SERIES_HEIGHT = 40;
 var MARGIN_RIGHT = 100;
 
-var RANGE_REGEX = /(\d+):(\d+)/;
+var TWO_BUILDS = /(\d+):(\d+)/;
+
+var SERIES_PRETTY_NAME = {
+  parse: 'Parse',
+  load:  'Load',
+  eval:  'Eval',
+  all:   'All'
+};
+
+var SERIES_HEIGHT_FACTOR = {
+  4: 1.25,
+  5: 1.75,
+  6: 2.25
+};
 
 var symLinks = {
   'ast.arr': '../../../src/arr/trove/ast.arr',
@@ -31,15 +44,15 @@ function alertError (build) {
 }
 
 function visualize (build, normalized, sortByFileSize) {
-  var matchRange = build.match(RANGE_REGEX);
+  var twoBuilds = build.match(TWO_BUILDS);
   var getErrorPlaceHolder = $.Deferred();
 
   var jenkinsHref;
   var csvHref;
 
-  if(matchRange) {
-    var build0 = parseInt(matchRange[1]);
-    var build1 = parseInt(matchRange[2]);
+  if(twoBuilds) {
+    var build0 = parseInt(twoBuilds[1]);
+    var build1 = parseInt(twoBuilds[2]);
 
 
     var filename0 = 'auto-report-' + build0 + '.csv';
@@ -189,6 +202,17 @@ function formatPercent (numer, denom) {
   return Math.round((numer / denom) * 10000) / 100;
 }
 
+function getSeriesNames (data) {
+  var firstName = data[0][NAME];
+  var relevantData = data.filter(function (datum) {
+    return datum[NAME] === firstName;
+  });
+  var seriesNames = relevantData.map(function (datum) {
+    return datum[FUNCTION];
+  });
+  return seriesNames;
+}
+
 function makeChart (csvParsed, build, normalized, sortByFileSize, fromSource, filename) {
   var data = csvParsed.data;
 
@@ -200,68 +224,58 @@ function makeChart (csvParsed, build, normalized, sortByFileSize, fromSource, fi
     return datum[NAME];
   });
 
+  var seriesNames = getSeriesNames(data);
+  
+  var NUMBER_OF_SERIES = seriesNames.length;
+
   if (names.length % 3 !== 0) {
     throw new Error('Corrupted CSV data!');
   }
 
-  /* names are in triplicate because of parse, load, and eval */
   var i = 0;
   var names_set = [];
   while (i < names.length) {
-    names_set[i / 3] = names[i];
-    i = i + 3;
+    names_set[i / NUMBER_OF_SERIES] = names[i];
+    i = i + NUMBER_OF_SERIES;
   }
 
-  var parseData = data.filter(function (datum) {
-    return datum[FUNCTION] === 'parse';
-  }).map(get_hz);
+  var seriesData = {};
 
-  var loadData = data.filter(function (datum) {
-    return datum[FUNCTION] === 'load';
-  }).map(get_hz);
+  var seriesFilter = function (thisSeriesName) {
+    return function (datum) {
+      return datum[FUNCTION] === thisSeriesName;
+    };
+  };
 
-  var evalData = data.filter(function (datum) {
-    return datum[FUNCTION] === 'eval';
-  }).map(get_hz);
+  var seriesHzFormat = function (thisSeriesName) {
+    return function (hz) {
+      return normalized ?
+        formatPercent(hz, seriesData[thisSeriesName][0]) :
+        formatHzValue(hz);
+    };
+  };
 
-  if (normalized) {
-    var parseGold = parseData[0];
-    var loadGold = loadData[0];
-    var evalGold = evalData[0];
-
-    parseData = parseData.map(function (hz) {
-      return formatPercent(hz, parseGold);
-    });
-    loadData  = loadData.map(function (hz) {
-      return formatPercent(hz, loadGold);
-    });
-    evalData  = evalData.map(function (hz) {
-      return formatPercent(hz, evalGold);
-    });
-  } else {
-    parseData = parseData.map(formatHzValue);
-    loadData = loadData.map(formatHzValue);
-    evalData = evalData.map(formatHzValue);
+  for (i = 0; i < seriesNames.length; i++) {
+    seriesData[seriesNames[i]] = 
+      data.filter(seriesFilter(seriesNames[i])).map(get_hz);
   }
+
+  for (i = 0; i < seriesNames.length; i++) {
+    seriesData[seriesNames[i]] = 
+      seriesData[seriesNames[i]].map(seriesHzFormat(seriesNames[i]));
+  }
+
+  var chartSeries = seriesNames.map(function (thisSeriesName) {
+    return {
+      name: SERIES_PRETTY_NAME[thisSeriesName] || thisSeriesName,
+      data: seriesData[thisSeriesName],
+    };
+  }).reverse();
 
   var config = {
-    series: [
-      {
-        name: 'Parse',
-        data: parseData,
-        index: 2
-      }, {
-        name: 'Load',
-        data: loadData,
-        index: 1
-      }, {
-        name: 'Eval',
-        data: evalData,
-        index: 0
-      }
-    ],
+    series: chartSeries,
     names: names_set,
-    heightFactor: 1,
+    heightFactor: SERIES_HEIGHT_FACTOR[chartSeries.length] || 1,
     files: [filename],
     subtitle: fromSource ?
             'File: ' + filename :
@@ -270,14 +284,14 @@ function makeChart (csvParsed, build, normalized, sortByFileSize, fromSource, fi
     yAxisText: normalized ? 'percent' : 'Hertz (ops/second)'
   };
 
-  if (sortByFileSize) {
-    getAllProgramSizes(names_set).done(function (response) {
-      sortData(response, names_set, parseData, loadData, evalData, 'size');
-      showChart(config);
-    });
-  } else {
+  // if (sortByFileSize) {
+    // getAllProgramSizes(names_set).done(function (response) {
+      // sortData(response, names_set, parseData, loadData, evalData, 'size');
+      // showChart(config);
+    // });
+  // } else {
     showChart(config);
-  }
+  // }
 }
 
 function getRangeSliceByName (rangeParsed, index, name) {
@@ -383,7 +397,7 @@ function makeDiffChart (csv0, csv1, filename0, filename1) {
       }
     ],
     names: names_set,
-    heightFactor: 2.5,
+    heightFactor: 1,
     files: [filename0, filename1],
     subtitle: 'Files: ' + filename0 + ' & ' + filename1,
     xAxisText: '',
@@ -395,11 +409,13 @@ function makeDiffChart (csv0, csv1, filename0, filename1) {
 }
 
 function showChart (config) {
+  var unitHeight = SERIES_HEIGHT * config.series.length * config.heightFactor;
+  var chartHeight = unitHeight * config.names.length;
   $(function () {
     $('#container').highcharts({
       chart: {
         type: 'bar',
-        height: config.names.length * CATEGORY_HEIGHT * config.heightFactor,
+        height: chartHeight,
         marginRight: MARGIN_RIGHT
       },
       title: {
