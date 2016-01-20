@@ -22,8 +22,8 @@ push-site:
 NODE    = node
 MODULES = node_modules/
 JSHINT  = $(MODULES)jshint/bin/jshint
-FILES   = visualize.js
-
+FILES   = visualize.js index.html
+JSHINTFLAGS = --extract=auto
 .PHONY: jshint
 jshint:
-	$(NODE) $(JSHINT) $(FILES)
+	$(NODE) $(JSHINT) $(JSHINTFLAGS) $(FILES)

@@ -75,6 +75,10 @@
     
     
     <script>
+      /* globals alert, $, visualize,
+          showIndexPage, alertError,
+          visualizeFromSource, visualizeDiffFromSource  */
+      var urlParams;
       // http://stackoverflow.com/a/2880929
       (window.onpopstate = function () {
           var match,
@@ -86,9 +90,12 @@
               query  = window.location.search.substring(1);
 
           urlParams = {};
-          while (match = search.exec(query))
-             urlParams[decode(match[1])] = decode(match[2]);
-      })();
+          match = search.exec(query);
+          while (match) {
+            urlParams[decode(match[1])] = decode(match[2]);
+            match = search.exec(query);
+          }
+      }).call();
 
       if (urlParams.build) {
         var build = urlParams.build;
@@ -96,13 +103,13 @@
           build = build.slice(0, build.length - 1);
         }
 
-        var normalized = urlParams.normalized 
-          ? urlParams.normalized.slice(0,2) === 'on'
-          : false;
+        var normalized = urlParams.normalized ?
+          urlParams.normalized.slice(0,2) === 'on' :
+          false;
 
-        var sort = urlParams.sort 
-          ? urlParams.sort.slice(0,2) === 'on'
-          : false;
+        var sort = urlParams.sort ?
+          urlParams.sort.slice(0,2) === 'on' :
+          false;
 
         var promise = visualize(build, normalized, sort);
 
@@ -119,28 +126,28 @@
           if (!build.match(RANGE_REGEX)) {
             $('#nav-links').toggle(true);
 
-            $('#back-nav').attr('href', '?build=' + previous 
-            + '&normalized=' + (normalized ? 'on' : 'off')
-            + '&sort=' + (sort ? 'on' : 'off'));
+            $('#back-nav').attr('href', '?build=' + previous +
+              '&normalized=' + (normalized ? 'on' : 'off') +
+              '&sort=' + (sort ? 'on' : 'off'));
 
             $('#back-nav').html(previous);
 
-            $('#forward-nav').attr('href', '?build=' + next
-            + '&normalized=' + (normalized ? 'on' : 'off')
-            + '&sort=' + (sort ? 'on' : 'off'));
+            $('#forward-nav').attr('href', '?build=' + next +
+              '&normalized=' + (normalized ? 'on' : 'off') +
+              '&sort=' + (sort ? 'on' : 'off'));
 
             $('#forward-nav').html(next);
 
-            $('#toggle-nav').attr('href', '?build=' + build
-            + '&normalized=' + (normalized ? 'off' : 'on')
-            + '&sort=' + (sort ? 'on' : 'off'));
+            $('#toggle-nav').attr('href', '?build=' + build +
+              '&normalized=' + (normalized ? 'off' : 'on') +
+              '&sort=' + (sort ? 'on' : 'off'));
 
             $('#toggle-nav').html(normalized ? 
               'Toggle (Raw Hertz)' : 'Toggle (Normalized)');
 
-            $('#sort-nav').attr('href', '?build=' + build
-            + '&normalized=' + (normalized ? 'on' : 'off')
-            + '&sort=' + (sort ? 'off' : 'on'));
+            $('#sort-nav').attr('href', '?build=' + build +
+              '&normalized=' + (normalized ? 'on' : 'off') +
+              '&sort=' + (sort ? 'off' : 'on'));
 
             $('#sort-nav').html(sort ? 
               'Sort (Alpha)' : 'Sort (File Size)');  
@@ -150,41 +157,35 @@
             $('#forward-nav').toggle(false);
             $('#toggle-nav').toggle(false);
             $('#sort-nav').toggle(false);
-          }        
-
-
-        })
+          }
+        });
       } else {
 
-        function readSingleFile(evt) {
+        var readSingleFile = function (evt) {
           evt.preventDefault();
-          console.log(evt)
           var f = evt.target.parentNode.elements[0].files[0]; 
-
-          var valid = f !== undefined && f.type === 'text/csv'
-
+          var valid = f !== undefined && f.type === 'text/csv';
           if (valid) {
             var r = new FileReader();
             r.readAsText(f);
             r.onload = function(e) { 
               visualizeFromSource(e.target.result, f.name);
-            }
+            };
           } else {
-            alert('Please specify a csv file!')
+            alert('Please specify a csv file!');
           }
-        } 
+        };
 
-        function readTwoFiles(evt) {
+        var readTwoFiles = function(evt) {
           evt.preventDefault();
           var formElements = evt.target.parentNode.elements;
-          // console.log(formElements, formElements[0], formElements[1])
           var file0 = formElements[0].files[0];
           var file1 = formElements[1].files[0];
           var filename0 = file0.name;
           var filename1 = file1.name;
         
-          var valid = file0 !== undefined && file1 !== undefined
-            && file0.type ==='text/csv' && file1.type === 'text/csv';
+          var valid = file0 !== undefined && file1 !== undefined &&
+            file0.type ==='text/csv' && file1.type === 'text/csv';
 
           if (valid) {
             var r0 = new FileReader();
@@ -196,15 +197,15 @@
                 var contents0 = e0.target.result;
                 var contents1 = e1.target.result;
                 visualizeDiffFromSource(contents0, contents1, filename0, filename1);
-              }
-            }
+              };
+            };
           } else {
             alert('Please specify two CSV files!');
           }
-        }
+        };
 
           document.getElementById('choose-file-submit').addEventListener('click', readSingleFile, false);
-          document.getElementById('choose-two-files-submit').addEventListener('click', readTwoFiles, false)
+          document.getElementById('choose-two-files-submit').addEventListener('click', readTwoFiles, false);
 
         showIndexPage();
       }
