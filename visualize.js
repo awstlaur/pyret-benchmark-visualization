@@ -157,18 +157,16 @@ function getProgramSize (name, updateThisHash) {
   });
 }
 
-// this function sorts names, parseData, loadData, and evalData 
+// this function sorts names and seriesData in place
 // in place
-function sortData (sizeOf, names, parseData, loadData, evalData) {
+function sortData (sizeOf, names, seriesData, seriesNames) {
   var bundled = [];
   var i;
   for (i = names.length - 1; i >= 0; i--) {
     bundled[i] = {
       'name': names[i],
       'size': sizeOf[names[i]],
-      'parse': parseData[i],
-      'load': loadData[i],
-      'eval': evalData[i]
+      'series': seriesDataGetByIndex(seriesData, seriesNames, i)
     };
   }
 
@@ -183,11 +181,25 @@ function sortData (sizeOf, names, parseData, loadData, evalData) {
   });
   
   for (i = bundled.length - 1; i >= 0; i--) {
-    parseData[i] = bundled[i].parse;
-    loadData[i] = bundled[i].load;
-    evalData[i] = bundled[i].eval;
+    seriesDataSetByIndex(seriesData, seriesNames, i, bundled[i].series);
     names[i] = bundled[i].name;
   }
+}
+
+function seriesDataGetByIndex (seriesData, seriesNames, index) {
+  var out = {};
+  for (var i = 0; i < seriesNames.length; i++) {
+    out[seriesNames[i]] = seriesData[seriesNames[i]][index];
+  }
+  return out;
+}
+
+function seriesDataSetByIndex (seriesData, seriesNames, index, setTo) {
+  var out = {};
+  for (var i = 0; i < seriesNames.length; i++) {
+    seriesData[seriesNames[i]][index] = setTo[seriesNames[i]];
+  }
+  return out;
 }
 
 function get_hz (datum) {
@@ -284,14 +296,21 @@ function makeChart (csvParsed, build, normalized, sortByFileSize, fromSource, fi
     yAxisText: normalized ? 'percent' : 'Hertz (ops/second)'
   };
 
-  // if (sortByFileSize) {
-    // getAllProgramSizes(names_set).done(function (response) {
-      // sortData(response, names_set, parseData, loadData, evalData, 'size');
-      // showChart(config);
-    // });
-  // } else {
+  if (sortByFileSize) {
+    getAllProgramSizes(names_set).done(function (response) {
+      sortData(response, names_set, seriesData, seriesNames);
+      config.chartSeries = seriesNames.map(function (thisSeriesName) {
+        return {
+          name: SERIES_PRETTY_NAME[thisSeriesName] || thisSeriesName,
+          data: seriesData[thisSeriesName],
+        };
+      }).reverse();
+
+      showChart(config);
+    });
+  } else {
     showChart(config);
-  // }
+  }
 }
 
 function getRangeSliceByName (rangeParsed, index, name) {
