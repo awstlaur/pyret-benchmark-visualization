@@ -1,3 +1,4 @@
 {
-	"strict"   : "implied"
+	"strict"   : "implied",
+	"browser"  : "true"
 }
