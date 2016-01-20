@@ -2,7 +2,7 @@ SHELL=/bin/bash -o pipefail
 
 RSYNC    := rsync
 RMAINFLAGS := -i -r
-REXCLUDE := --exclude='Makefile' --exclude='builds/*' --exclude='.git*' --exclude='update*' --exclude='README*'
+REXCLUDE := --exclude='Makefile' --exclude='builds/*' --exclude='.git*' --exclude='update*' --exclude='README*' --exclude-from='.gitignore'
 RPERMS   := --perms --chmod=Du+r,Du+w,Du+x,Dgo+r,Dgo+x,Fu+r,Fu+w,Fgo+r
 
 RFLAGS   = $(RMAINFLAGS) $(REXCLUDE) $(RPERMS)
